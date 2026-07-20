@@ -4,6 +4,7 @@ import TrendingCoins from "@/components/TrendingCoins";
 import MoversAndShakers from "@/components/MoversAndShakers";
 import MarketDominance from "@/components/MarketDominance";
 import HighestVolume from "@/components/HighestVolume";
+import HighestVolatility from "@/components/HighestVolatility";
 
 export default function Home() {
   return (
@@ -24,6 +25,8 @@ export default function Home() {
       <MarketDominance />
 
       <HighestVolume />
+
+      <HighestVolatility />
 
       <div className="bg-bca-card border border-bca-border rounded-2xl p-5 backdrop-blur-sm">
         <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">System Status</h3>

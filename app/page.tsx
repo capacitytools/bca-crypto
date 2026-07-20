@@ -1,5 +1,6 @@
 import LivePrices from "@/components/LivePrices";
 import MarketSentiment from "@/components/MarketSentiment";
+import TrendingCoins from "@/components/TrendingCoins";
 
 export default function Home() {
   return (
@@ -12,6 +13,8 @@ export default function Home() {
       </div>
       
       <LivePrices />
+      
+      <TrendingCoins />
 
       <div className="bg-bca-card border border-bca-border rounded-2xl p-5 backdrop-blur-sm">
         <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">System Status</h3>

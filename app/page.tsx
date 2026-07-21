@@ -1,5 +1,6 @@
 import LivePrices from "@/components/LivePrices";
 import MarketSentiment from "@/components/MarketSentiment";
+import AIMarketScore from "@/components/AIMarketScore";
 import TrendingCoins from "@/components/TrendingCoins";
 import MoversAndShakers from "@/components/MoversAndShakers";
 import MarketDominance from "@/components/MarketDominance";
@@ -10,6 +11,8 @@ export default function Home() {
   return (
     <div className="space-y-6">
       <MarketSentiment />
+      
+      <AIMarketScore />
 
       <div className="bg-bca-card border border-bca-border rounded-2xl p-5 backdrop-blur-sm">
         <h2 className="text-xl font-bold text-white">Welcome to BCA</h2>

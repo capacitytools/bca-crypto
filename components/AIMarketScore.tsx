@@ -3,58 +3,73 @@
 import { useEffect, useState } from 'react';
 import { Brain } from 'lucide-react';
 
-interface ScoreData {
-  score: number;
-  label: string;
-  color: string;
-  reasoning: string;
-}
-
 export default function AIMarketScore() {
-  const [data, setData] = useState<ScoreData | null>(null);
+  const [score, setScore] = useState(50);
+  const [label, setLabel] = useState('Loading...');
+  const [color, setColor] = useState('text-gray-400');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const calculateScore = async () => {
       try {
+        // Fetch Sentiment
         const fngRes = await fetch('https://api.alternative.me/fng/?limit=1');
         const fngData = await fngRes.json();
-        const sentiment = parseInt(fngData.data[0].value);
+        
+        if (!fngData || !fngData.data || !fngData.data[0]) {
+          throw new Error('Invalid sentiment data');
+        }
+        
+        const sentiment = parseInt(fngData.data[0].value) || 50;
 
+        // Fetch Market Data
         const marketsRes = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=24h');
         const marketsData = await marketsRes.json();
         
-        const avgChange = marketsData.reduce((acc: number, coin: any) => acc + (coin.price_change_percentage_24h || 0), 0) / marketsData.length;
+        let avgChange = 0;
+        if (marketsData && marketsData.length > 0) {
+          const totalChange = marketsData.reduce((acc: number, coin: any) => {
+            return acc + (coin.price_change_percentage_24h || 0);
+          }, 0);
+          avgChange = totalChange / marketsData.length;
+        }
 
-        let score = 50;
-        let label = 'Neutral';
-        let color = 'text-yellow-400';
-        let reasoning = 'Market is undecided. Wait for clarity.';
-
-        score = sentiment;
+        // Calculate Score
+        let finalScore = sentiment;
+        let finalLabel = 'Neutral';
+        let finalColor = 'text-yellow-400';
+        let reasoning = 'Market is balanced.';
 
         if (avgChange > 2) {
-            score = Math.min(100, score + 10);
-            reasoning = 'Strong buying pressure detected in top assets.';
+          finalScore = Math.min(100, finalScore + 10);
+          reasoning = 'Buying pressure detected.';
         } else if (avgChange < -2) {
-            score = Math.max(0, score - 10);
-            reasoning = 'Selling pressure detected. Market is weak.';
+          finalScore = Math.max(0, finalScore - 10);
+          reasoning = 'Selling pressure detected.';
+        }
+        if (finalScore >= 75) { 
+          finalLabel = 'Strong Buy'; 
+          finalColor = 'text-green-400'; 
+        } else if (finalScore >= 55) { 
+          finalLabel = 'Bullish'; 
+          finalColor = 'text-green-300'; 
+        } else if (finalScore <= 25) { 
+          finalLabel = 'Strong Sell'; 
+          finalColor = 'text-red-400'; 
+        } else if (finalScore <= 45) { 
+          finalLabel = 'Bearish'; 
+          finalColor = 'text-red-300'; 
         }
 
-        if (score >= 75) { label = 'Strong Buy'; color = 'text-green-400'; }
-        else if (score >= 55) { label = 'Bullish'; color = 'text-green-300'; }
-        else if (score <= 25) { label = 'Strong Sell'; color = 'text-red-400'; }
-        else if (score <= 45) { label = 'Bearish'; color = 'text-red-300'; }
+        setScore(finalScore);
+        setLabel(finalLabel);
+        setColor(finalColor);
         
-        if (sentiment > 65 && avgChange < -1) {
-            label = 'Caution (Divergence)';            color = 'text-orange-400';
-            reasoning = 'Sentiment is high but prices are dropping. Possible trap!';
-            score = 50;
-        }
-
-        setData({ score, label, color, reasoning });
       } catch (error) {
-        console.error("AI Error", error);
+        console.error('AI Score Error:', error);
+        setScore(50);
+        setLabel('Unavailable');
+        setColor('text-gray-400');
       } finally {
         setLoading(false);
       }
@@ -67,35 +82,36 @@ export default function AIMarketScore() {
 
   if (loading) {
     return (
-      <div className="h-32 bg-bca-card border border-bca-border rounded-2xl animate-pulse"></div>
+      <div className="bg-gradient-to-br from-indigo-900/20 to-purple-900/20 border border-indigo-500/30 rounded-2xl p-5 backdrop-blur-sm">
+        <div className="animate-pulse space-y-3">
+          <div className="h-4 bg-white/10 rounded w-1/3"></div>
+          <div className="h-12 bg-white/10 rounded w-1/2"></div>
+        </div>
+      </div>
     );
   }
 
-  if (!data) return null;
-
   return (
-    <div className="bg-gradient-to-br from-indigo-900/20 to-purple-900/20 border border-indigo-500/30 rounded-2xl p-5 backdrop-blur-sm relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
-      
-      <div className="flex items-center justify-between mb-3 relative z-10">
+    <div className="bg-gradient-to-br from-indigo-900/20 to-purple-900/20 border border-indigo-500/30 rounded-2xl p-5 backdrop-blur-sm">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Brain className="text-purple-400" size={20} />
-          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">BCA AI Score</h2>
-        </div>
-        <span className={`text-xs font-bold px-2 py-1 rounded-full bg-black/30 ${data.color}`}>
-          {data.label}
+          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">BCA AI Score</h2>        </div>
+        <span className={`text-xs font-bold px-2 py-1 rounded-full bg-black/30 ${color}`}>
+          {label}
         </span>
       </div>
 
-      <div className="flex items-center gap-4 relative z-10">
-        <div className={`text-5xl font-bold ${data.color}`}>
-          {data.score}
+      <div className="flex items-center gap-4">
+        <div className={`text-5xl font-bold ${color}`}>
+          {score}
         </div>
         <div className="flex-1">
-          <p className="text-xs text-gray-400 leading-relaxed">
-            <span className="text-white font-bold">AI Analysis:</span> {data.reasoning}
+          <p className="text-xs text-gray-400">
+            <span className="text-white font-bold">AI Analysis:</span> Market intelligence based on sentiment and price action.
           </p>
         </div>
-      </div>    </div>
+      </div>
+    </div>
   );
 }

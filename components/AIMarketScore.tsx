@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BrainCircuit } from 'lucide-react';
+import { Brain } from 'lucide-react';
 
 interface ScoreData {
   score: number;
@@ -53,7 +53,6 @@ export default function AIMarketScore() {
         else if (score <= 45) { label = 'Bearish'; color = 'text-red-300'; }
         
         // CRITICAL: Check for Divergence (The Trap!)
-        // If Sentiment is High (Greed) but Prices are Dropping, warn the user!
         if (sentiment > 65 && avgChange < -1) {
             label = 'Caution (Divergence)';
             color = 'text-orange-400';
@@ -90,7 +89,7 @@ export default function AIMarketScore() {
       
       <div className="flex items-center justify-between mb-3 relative z-10">
         <div className="flex items-center gap-2">
-          <BrainCircuit className="text-purple-400" size={20} />
+          <Brain className="text-purple-400" size={20} />
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">BCA AI Score</h2>
         </div>
         <span className={`text-xs font-bold px-2 py-1 rounded-full bg-black/30 ${data.color}`}>

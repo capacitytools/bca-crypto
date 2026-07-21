@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import Link from 'next/link';
 
 interface Coin {
   id: string;
@@ -52,22 +53,28 @@ export default function MarketsPage() {
       <p className="text-sm text-gray-400">Top 50 coins by market cap.</p>
       <div className="space-y-2">
         {coins.map((coin) => (
-          <div key={coin.id} className="bg-bca-card border border-bca-border rounded-xl p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src={coin.image} className="w-8 h-8 rounded-full" alt={coin.name} />
-              <div>
-                <p className="font-bold text-white text-sm">{coin.symbol.toUpperCase()}</p>
-                <p className="text-xs text-gray-500">{coin.name}</p>
+          <Link 
+            key={coin.id} 
+            href={`/markets/${coin.id}`} 
+            className="block bg-bca-card border border-bca-border rounded-xl p-4 active:bg-white/5 transition-colors"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <img src={coin.image} className="w-8 h-8 rounded-full" alt={coin.name} />
+                <div>
+                  <p className="font-bold text-white text-sm">{coin.symbol.toUpperCase()}</p>
+                  <p className="text-xs text-gray-500">{coin.name}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="font-bold text-white text-sm">${coin.current_price.toLocaleString()}</p>
+                <div className={`flex items-center justify-end gap-1 text-xs font-medium ${coin.price_change_percentage_24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  {coin.price_change_percentage_24h >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                  <span>{coin.price_change_percentage_24h.toFixed(2)}%</span>
+                </div>
               </div>
             </div>
-            <div className="text-right">
-              <p className="font-bold text-white text-sm">${coin.current_price.toLocaleString()}</p>
-              <div className={`flex items-center justify-end gap-1 text-xs font-medium ${coin.price_change_percentage_24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {coin.price_change_percentage_24h >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                <span>{coin.price_change_percentage_24h.toFixed(2)}%</span>
-              </div>
-            </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

@@ -1,29 +1,36 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function MarketsPage() {
-  const [coins, setCoins] = useState([]);
+  const router = useRouter();
+  const [coins, setCoins] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadCoins() {
+    const loadCoins = async () => {
       try {
-        const response = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1');
-        const data = await response.json();
+        const res = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1');
+        const data = await res.json();
         setCoins(data);
-      } catch (error) {
-        console.log('Error loading coins:', error);
+      } catch (err) {
+        console.error('Error:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }
-    
+    };
+
     loadCoins();
   }, []);
 
+  const handleCoinClick = (coinId: string) => {
+    router.push(`/markets/${coinId}`);
+  };
+
   if (loading) {
     return (
-      <div>
+      <div className="min-h-screen bg-black p-4">
         <h1 className="text-2xl font-bold text-white mb-4">Markets</h1>
         <p className="text-gray-400">Loading...</p>
       </div>
@@ -31,16 +38,16 @@ export default function MarketsPage() {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-white mb-4">Markets</h1>
-      <p className="text-gray-400 mb-4">Top 20 coins</p>
+    <div className="min-h-screen bg-black p-4">
+      <h1 className="text-2xl font-bold text-white mb-2">Markets</h1>
+      <p className="text-gray-400 text-sm mb-4">Top 20 coins</p>
       
       <div className="space-y-2">
         {coins.map((coin) => (
-          <a 
+          <div 
             key={coin.id}
-            href={`/markets/${coin.id}`}
-            className="block bg-white/5 border border-white/10 rounded-lg p-3"
+            onClick={() => handleCoinClick(coin.id)}
+            className="bg-gray-900 border border-gray-800 rounded-lg p-3 active:bg-gray-800 cursor-pointer"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -57,7 +64,7 @@ export default function MarketsPage() {
                 </div>
               </div>
             </div>
-          </a>
+          </div>
         ))}
       </div>
     </div>

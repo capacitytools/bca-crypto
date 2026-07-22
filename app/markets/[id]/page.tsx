@@ -2,56 +2,40 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { TrendingUp, TrendingDown, Activity, BarChart3, Layers } from 'lucide-react';
-
-interface CoinDetails {
-  id: string;
-  name: string;
-  symbol: string;
-  image: { large: string };
-  market_data: {
-    current_price: { usd: number };
-    price_change_percentage_24h: number;
-    price_change_percentage_7d: number;
-    market_cap: { usd: number };
-    total_volume: { usd: number };
-    circulating_supply: number;
-  };
-}
 
 export default function CoinDetailsPage() {
   const params = useParams();
-  const coinId = params.id;
+  const coinId = Array.isArray(params.id) ? params.id[0] : params.id;
   
-  const [coin, setCoin] = useState<CoinDetails | null>(null);
+  const [coin, setCoin] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     if (!coinId) {
-      setError('No coin ID provided');
+      setError('No coin selected');
       setLoading(false);
       return;
     }
 
     const fetchDetails = async () => {
-      setLoading(true);
-      setError('');
       try {
-        console.log('Fetching coin:', coinId);
+        setLoading(true);
+        setError('');
+        
         const url = `https://api.coingecko.com/api/v3/coins/${coinId}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`;
         
-        const res = await fetch(url);
+        const response = await fetch(url);
         
-        if (!res.ok) {
-          throw new Error(`API error: ${res.status}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.status}`);
         }
         
-        const data = await res.json();        console.log('Coin data:', data);
+        const data = await response.json();
         setCoin(data);
       } catch (err) {
-        console.error('Failed to fetch details:', err);
-        setError('Failed to load coin data. Please try again.');
+        console.error('Error fetching coin:', err);
+        setError('Could not load coin data');
       } finally {
         setLoading(false);
       }
@@ -60,92 +44,102 @@ export default function CoinDetailsPage() {
     fetchDetails();
   }, [coinId]);
 
+  // Loading state
   if (loading) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-4">
+      <div className="space-y-4">        <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-white/10 animate-pulse"></div>
           <div className="space-y-2">
             <div className="h-6 bg-white/10 rounded w-24 animate-pulse"></div>
             <div className="h-4 bg-white/10 rounded w-16 animate-pulse"></div>
           </div>
         </div>
-        <div className="h-32 bg-bca-card border border-bca-border rounded-2xl animate-pulse"></div>
+        <div className="h-32 bg-white/5 rounded-2xl animate-pulse"></div>
       </div>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <div className="space-y-4">
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-center">
-          <p className="text-red-400 font-bold mb-2">Error</p>
-          <p className="text-sm text-gray-300">{error}</p>
-          <p className="text-xs text-gray-500 mt-2">Coin ID: {coinId}</p>
-        </div>
+      <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+        <p className="text-red-400 font-bold">Error</p>
+        <p className="text-sm text-gray-300">{error}</p>
+        <p className="text-xs text-gray-500 mt-1">ID: {coinId}</p>
       </div>
     );
   }
 
-  if (!coin) return null;
+  // No data state
+  if (!coin || !coin.market_data) {
+    return (
+      <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+        <p className="text-yellow-400 font-bold">No Data</p>
+        <p className="text-sm text-gray-300">Could not find coin information</p>
+      </div>
+    );
+  }
 
-  const formatNumber = (num: number) => {
-    if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
-    if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
-    return num.toLocaleString();
+  // Helper function
+  const formatNum = (num: number) => {
+    if (!num && num !== 0) return '$0';
+    if (num >= 1000000000) return '$' + (num / 1000000000).toFixed(2) + 'B';
+    if (num >= 1000000) return '$' + (num / 1000000).toFixed(2) + 'M';
+    return '$' + num.toLocaleString();
   };
 
-  const isPositive24h = coin.market_data?.price_change_percentage_24h >= 0;
-  const isPositive7d = coin.market_data?.price_change_percentage_7d >= 0;
+  const price = coin.market_data.current_price?.usd || 0;
+  const change24h = coin.market_data.price_change_percentage_24h || 0;
+  const change7d = coin.market_data.price_change_percentage_7d_in_currency?.usd || 0;
+  const marketCap = coin.market_data.market_cap?.usd || 0;
+  const volume = coin.market_data.total_volume?.usd || 0;
+  const supply = coin.market_data.circulating_supply || 0;
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6">      {/* Header */}
       <div className="flex items-center gap-4">
-        <img src={coin.image?.large || ''} alt={coin.name} className="w-12 h-12 rounded-full" />
+        <img 
+          src={coin.image?.large || '/placeholder.png'} 
+          alt={coin.name || 'Coin'} 
+          className="w-12 h-12 rounded-full"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/48';
+          }}
+        />
         <div>
-          <h1 className="text-2xl font-bold text-white">{coin.name}</h1>
-          <p className="text-sm text-gray-400 uppercase">{coin.symbol}</p>
+          <h1 className="text-2xl font-bold text-white">{coin.name || 'Unknown'}</h1>
+          <p className="text-sm text-gray-400 uppercase">{coin.symbol || 'N/A'}</p>
         </div>
       </div>
 
       {/* Price Card */}
-      <div className="bg-bca-card border border-bca-border rounded-2xl p-5 backdrop-blur-sm">
-        <p className="text-3xl font-bold text-white">${coin.market_data?.current_price?.usd?.toLocaleString()}</p>
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+        <p className="text-3xl font-bold text-white">${price.toLocaleString()}</p>
         <div className="flex gap-4 mt-2">
-          <div className={`flex items-center gap-1 text-sm font-medium ${isPositive24h ? 'text-green-400' : 'text-red-400'}`}>
-            {isPositive24h ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-            <span>24h: {coin.market_data?.price_change_percentage_24h?.toFixed(2)}%</span>
-          </div>
-          <div className={`flex items-center gap-1 text-sm font-medium ${isPositive7d ? 'text-green-400' : 'text-red-400'}`}>
-            {isPositive7d ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-            <span>7d: {coin.market_data?.price_change_percentage_7d?.toFixed(2)}%</span>
-          </div>
+          <span className={change24h >= 0 ? 'text-green-400' : 'text-red-400'}>
+            24h: {change24h >= 0 ? '↑' : '↓'} {Math.abs(change24h).toFixed(2)}%
+          </span>
+          <span className={change7d >= 0 ? 'text-green-400' : 'text-red-400'}>
+            7d: {change7d >= 0 ? '↑' : '↓'} {Math.abs(change7d).toFixed(2)}%
+          </span>
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-bca-card border border-bca-border rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <BarChart3 size={14} className="text-blue-400" />
-            <p className="text-[10px] text-gray-400 uppercase font-bold">Market Cap</p>
-          </div>
-          <p className="text-white font-bold">{formatNumber(coin.market_data?.market_cap?.usd || 0)}</p>
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <p className="text-[10px] text-gray-400 uppercase font-bold mb-1">Market Cap</p>
+          <p className="text-white font-bold">{formatNum(marketCap)}</p>
         </div>
         
-        <div className="bg-bca-card border border-bca-border rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <Activity size={14} className="text-purple-400" />
-            <p className="text-[10px] text-gray-400 uppercase font-bold">24h Volume</p>
-          </div>
-          <p className="text-white font-bold">{formatNumber(coin.market_data?.total_volume?.usd || 0)}</p>
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <p className="text-[10px] text-gray-400 uppercase font-bold mb-1">24h Volume</p>
+          <p className="text-white font-bold">{formatNum(volume)}</p>
         </div>
 
-        <div className="bg-bca-card border border-bca-border rounded-xl p-4 col-span-2">
-          <div className="flex items-center gap-2 mb-1">
-            <Layers size={14} className="text-orange-400" />
-            <p className="text-[10px] text-gray-400 uppercase font-bold">Circulating Supply</p>
-          </div>          <p className="text-white font-bold">{coin.market_data?.circulating_supply?.toLocaleString() || 0} {coin.symbol?.toUpperCase()}</p>
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4 col-span-2">
+          <p className="text-[10px] text-gray-400 uppercase font-bold mb-1">Circulating Supply</p>
+          <p className="text-white font-bold">{supply.toLocaleString()} {coin.symbol?.toUpperCase()}</p>
         </div>
       </div>
     </div>

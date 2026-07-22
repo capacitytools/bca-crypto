@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { use } from 'react';
+import { useParams } from 'next/navigation';
 
-export default function CoinPage({ params }) {
-  const { id } = params;
+export default function CoinPage() {
+  const params = useParams();
+  const id = params.id;
+  
   const [coin, setCoin] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -50,7 +52,7 @@ export default function CoinPage({ params }) {
         <img src={coin.image?.large} alt="" className="w-12 h-12 rounded-full" />
         <div>
           <h1 className="text-2xl font-bold text-white">{coin.name}</h1>
-          <p className="text-gray-400">{coin.symbol.toUpperCase()}</p>
+          <p className="text-gray-400">{coin.symbol?.toUpperCase()}</p>
         </div>
       </div>
 

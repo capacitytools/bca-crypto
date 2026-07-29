@@ -20,10 +20,15 @@ export default function CoinPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
+        console.log('Fetching data for:', symbol);
+        
         const [priceData, klineData] = await Promise.all([
           getPrice(symbol),
           getKlines(symbol, '1h', 100) 
         ]);
+        
+        console.log('Price:', priceData);
+        console.log('Klines count:', klineData.length);
         
         setPrice(priceData);
         setKlines(klineData);
@@ -42,12 +47,12 @@ export default function CoinPage() {
       } catch (err) {
         console.error('Error:', err);
       } finally {
-        setLoading(false);
-      }
+        setLoading(false);      }
     };
 
     if (symbol) {
-      loadData();    }
+      loadData();
+    }
   }, [symbol]);
 
   if (loading) {
@@ -80,10 +85,27 @@ export default function CoinPage() {
         <p className="text-gray-400 text-sm mt-2">Live Price</p>
       </div>
 
+      {/* Debug: Show data count */}
+      <div className="bg-[#1E2329] border border-[#2B3139] rounded-xl p-4">
+        <p className="text-gray-400 text-sm">Candles Loaded: <span className="text-white font-bold">{klines.length}</span></p>
+        {klines.length === 0 && (
+          <p className="text-yellow-400 text-xs mt-2">⚠️ No candle data available</p>
+        )}
+        {klines.length > 0 && (
+          <p className="text-gray-500 text-xs mt-1">
+            First candle: ${klines[0]?.open} | Last candle: ${klines[klines.length - 1]?.close}
+          </p>
+        )}
+      </div>
       {/* THE CHART */}
-      {klines.length > 0 && (
+      {klines.length > 0 ? (
         <div className="bg-[#1E2329] border border-[#2B3139] rounded-xl p-2">
+          <h3 className="text-white font-bold text-sm mb-2 px-2">Price Chart (1H)</h3>
           <CandlestickChart data={klines} />
+        </div>
+      ) : (
+        <div className="bg-[#1E2329] border border-[#2B3139] rounded-xl p-8 text-center">
+          <p className="text-gray-400">Waiting for chart data...</p>
         </div>
       )}
 
@@ -96,6 +118,7 @@ export default function CoinPage() {
         className="w-full py-3 bg-[#F3BA2F] hover:bg-[#F3BA2F]/90 rounded-xl text-black font-bold mt-6"
       >
         Back to Markets
-      </button>    </div>
+      </button>
+    </div>
   );
 }

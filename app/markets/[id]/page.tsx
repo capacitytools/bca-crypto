@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getKlines, getPrice, formatSymbol, getBaseAsset } from '@/lib/binance';
+import { calculateEMA, calculateRSI, generateSignal } from '@/lib/indicators';
+import SignalCard from '@/components/SignalCard';
 
 export default function CoinPage() {
   const params = useParams();
@@ -10,18 +12,31 @@ export default function CoinPage() {
   const symbol = params.id as string;
   
   const [price, setPrice] = useState<string>('0');
-  const [klines, setKlines] = useState<any[]>([]);
+  const [signalData, setSignalData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
       try {
+        // Fetch 100 candles so our math has enough data to work with
         const [priceData, klineData] = await Promise.all([
           getPrice(symbol),
-          getKlines(symbol, '1h', 24)
+          getKlines(symbol, '1h', 100) 
         ]);
+        
         setPrice(priceData);
-        setKlines(klineData);
+
+        // Extract just the closing prices for our math
+        const closePrices = klineData.map(k => k.close);
+        const currentPrice = parseFloat(priceData);
+
+        // Run the AI Brain
+        const rsi = calculateRSI(closePrices, 14);
+        const ema = calculateEMA(closePrices, 50);
+        
+        const signal = generateSignal(currentPrice, rsi, ema);
+        setSignalData(signal);
+
       } catch (err) {
         console.error('Error:', err);
       } finally {
@@ -31,15 +46,13 @@ export default function CoinPage() {
 
     if (symbol) {
       loadData();
-      const interval = setInterval(loadData, 10000); // Update every 10s
-      return () => clearInterval(interval);
     }
   }, [symbol]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0B0E11] p-4">
-        <div className="text-white text-xl font-bold">Loading...</div>
+        <div className="text-white text-xl font-bold">Analyzing Market...</div>
       </div>
     );
   }
@@ -66,26 +79,13 @@ export default function CoinPage() {
         <p className="text-gray-400 text-sm mt-2">Live Price</p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-[#1E2329] border border-[#2B3139] rounded-xl p-4">
-          <p className="text-gray-400 text-xs mb-1">24h High</p>
-          <p className="text-white font-bold">
-            ${klines.length > 0 ? Math.max(...klines.map(k => k.high)).toLocaleString() : '0'}
-          </p>
-        </div>
-        <div className="bg-[#1E2329] border border-[#2B3139] rounded-xl p-4">
-          <p className="text-gray-400 text-xs mb-1">24h Low</p>
-          <p className="text-white font-bold">
-            ${klines.length > 0 ? Math.min(...klines.map(k => k.low)).toLocaleString() : '0'}
-          </p>
-        </div>
-      </div>
+      {/* THE AI SIGNAL CARD */}
+      {signalData && <SignalCard data={signalData} />}
 
       {/* Back Button */}
       <button 
         onClick={() => router.back()}
-        className="w-full py-3 bg-[#F3BA2F] hover:bg-[#F3BA2F]/90 rounded-xl text-black font-bold"
+        className="w-full py-3 bg-[#F3BA2F] hover:bg-[#F3BA2F]/90 rounded-xl text-black font-bold mt-6"
       >
         Back to Markets
       </button>

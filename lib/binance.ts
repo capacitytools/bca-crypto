@@ -31,7 +31,7 @@ export async function get24hTickers(): Promise<Ticker[]> {
   return data;
 }
 
-export async function getKlines(symbol: string, interval: string = '1h', limit: number = 100): Promise<Kline[]> {
+export async function getKlines(symbol: string, interval: string = '1h', limit: number = 100) {
   const res = await fetch(`${BASE_URL}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
   const data = await res.json();
   return data.map((k: any) => ({

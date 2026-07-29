@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { getKlines, getPrice, formatSymbol, getBaseAsset } from '@/lib/binance';
 import { calculateEMA, calculateRSI, generateSignal } from '@/lib/indicators';
 import SignalCard from '@/components/SignalCard';
-import CandlestickChart from '@/components/CandlestickChart';
 
 export default function CoinPage() {
   const params = useParams();
@@ -47,8 +46,8 @@ export default function CoinPage() {
     };
 
     if (symbol) {
-      loadData();    }
-  }, [symbol]);
+      loadData();
+    }  }, [symbol]);
 
   if (loading) {
     return (
@@ -80,29 +79,24 @@ export default function CoinPage() {
         <p className="text-gray-400 text-sm mt-2">Live Price</p>
       </div>
 
-      {/* Chart Status */}
+      {/* Data Status */}
       <div className="bg-[#1E2329] border border-[#2B3139] rounded-xl p-4">
         <p className="text-gray-400 text-sm">
-          Chart Data: {klines.length} candles loaded
+          Candles Loaded: {klines.length}
+        </p>
+        <p className="text-gray-500 text-xs mt-1">
+          Data is ready for charting
         </p>
       </div>
 
-      {/* THE CHART - Only show if we have data */}
-      {klines.length > 0 && (
-        <div className="bg-[#1E2329] border border-[#2B3139] rounded-xl p-4">
-          <h3 className="text-white font-bold mb-3">Price Chart (1H)</h3>
-          <CandlestickChart data={klines} />
-        </div>
-      )}
-
       {/* THE AI SIGNAL CARD */}
       {signalData && <SignalCard data={signalData} />}
+
       {/* Back Button */}
       <button 
         onClick={() => router.back()}
         className="w-full py-3 bg-[#F3BA2F] hover:bg-[#F3BA2F]/90 rounded-xl text-black font-bold mt-6"
-      >
-        Back to Markets
+      >        Back to Markets
       </button>
     </div>
   );
